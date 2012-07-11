@@ -2,10 +2,11 @@ require 'ping'
 require 'thread'
 
 class PingWatcher
-  def initialize(host, observer)
+  def initialize(host, observer, pingproc = Ping.method(:pingecho))
     @host = host
     @observer = observer
     @observer.register(self, 'ping', host)
+    @pingproc = pingproc
   end
 
   def finished?
@@ -13,7 +14,7 @@ class PingWatcher
   end
   
   def step
-    up = Ping.pingecho @host
+    up = @pingproc.call @host
     if up
       @observer.up self
     else
