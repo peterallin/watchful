@@ -1,4 +1,0 @@
-class Watchers
-  @watchers = []
-  
-end
