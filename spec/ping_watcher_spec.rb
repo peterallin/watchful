@@ -71,4 +71,24 @@ describe PingWatcher do
     pw.step
     ping.last_host.should be(host)
   end
+
+  it "pings once per step" do
+    class TestPing
+      attr_reader :count
+      def initialize
+        @count = 0
+      end
+      def pingecho(host)
+        @count = @count + 1
+      end
+    end
+    ping = TestPing.new
+    observer = TestObserver.new
+    host = nil
+    pw = PingWatcher.new(host, observer, ping.method(:pingecho))
+
+    (1..10).each { pw.step }
+    ping.count.should eq(10)
+    
+  end
 end
