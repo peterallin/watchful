@@ -1,9 +1,11 @@
 require 'thread'
 
 class Driver
-  def initialize(drivee, pause_seconds)
+  def initialize(drivee, pause_seconds, thread_class = Thread, sleep_method = method(:sleep))
+    @thread_class = thread_class
     @drivee = drivee
     @pause_seconds = pause_seconds
+    @sleep = sleep_method
   end
   
   def stop
@@ -11,10 +13,10 @@ class Driver
   end
 
   def start
-    @thread = Thread.new do
+    @thread = @thread_class.new do
       while not @drivee.finished? do
         @drivee.step
-        sleep @pause_seconds
+        @sleep.call @pause_seconds
       end
     end
   end
