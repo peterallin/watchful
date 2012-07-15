@@ -2,13 +2,19 @@ require 'ping'
 require 'thread'
 
 class PingWatcher
+  attr_reader :host
+  
   def initialize(host, observer, pingproc = Ping.method(:pingecho))
     @host = host
     @observer = observer
-    @observer.register(self, 'ping', host)
+    @observer.register(self, host)
     @pingproc = pingproc
   end
 
+  def kind
+    'ping'
+  end
+  
   def finished?
     false
   end
@@ -23,4 +29,3 @@ class PingWatcher
   end
   
 end
-

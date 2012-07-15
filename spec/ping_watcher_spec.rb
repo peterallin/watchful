@@ -9,7 +9,7 @@ class TestObserver
     @downs = []
   end
 
-  def register(subject, watcher_type, host)
+  def register(subject, host)
     @watchers.push subject
   end
 
@@ -24,6 +24,10 @@ end
 
 describe PingWatcher do
 
+  it "is on the 'ping' kind" do
+    PingWatcher.new(nil, TestObserver.new).kind.should eq "ping"
+  end
+  
   it "never finishes" do
     PingWatcher.new(nil, TestObserver.new).finished?.should eq(false)
   end
@@ -84,11 +88,9 @@ describe PingWatcher do
     end
     ping = TestPing.new
     observer = TestObserver.new
-    host = nil
-    pw = PingWatcher.new(host, observer, ping.method(:pingecho))
+    pw = PingWatcher.new(nil, observer, ping.method(:pingecho))
 
     (1..10).each { pw.step }
     ping.count.should eq(10)
-    
   end
 end
