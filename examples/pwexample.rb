@@ -61,7 +61,7 @@ class Observer
     end
   end
 
-  def register(watcher, host)
+  def register_host_watcher(watcher, host)
     watcher_type = watcher.kind
     @watchers[watcher] = { :type => watcher_type, :host => host }
     @hosts[host] = {} if not @hosts[host]
