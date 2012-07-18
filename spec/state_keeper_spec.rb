@@ -8,13 +8,13 @@ class TestWatcher
   def initialize(host, observer)
     @host = host
     @observer = observer
-    @observer.register(self, host)
+    @observer.register_host_watcher(self, host)
   end
-
+  
   def up
     @observer.up(self)
   end
-
+  
   def down
     @observer.down(self)
   end
@@ -32,17 +32,17 @@ class TestPinger
   def ping(host)
     @state
   end
-
+  
   def set_up
     @state = true
   end
-
+  
   def set_down
     @state = false
   end
 
   def make_method
-   self.method(:ping)
+    self.method(:ping)
   end
 end
 
@@ -99,5 +99,34 @@ describe StateKeeper do
     host2_states.keys.length.should eq(1)
     host2_states.keys.should include(pw_host2)
     host2_states[pw_host2].should eq(:down)
+  end
+
+  it "tells viewers when the state changes" do
+    class TestStateViewer
+      attr_reader :times_updated
+      def initialize
+        @times_updated = 0
+      end
+      
+      def update
+        @times_updated = @times_updated + 1
+      end
+    end
+
+    state = StateKeeper.new
+    state_viewer = TestStateViewer.new
+    state.register_state_viewer state_viewer
+    host = Object.new
+    tw = TestWatcher.new(host, state)
+    tw.up
+    state_viewer.times_updated.should eq(1)
+    tw.up
+    state_viewer.times_updated.should eq(1)
+    tw.down
+    state_viewer.times_updated.should eq(2)
+    tw.down
+    state_viewer.times_updated.should eq(2)
+    tw.up
+    state_viewer.times_updated.should eq(3)
   end
 end

@@ -9,7 +9,7 @@ class TestObserver
     @downs = []
   end
 
-  def register(subject, host)
+  def register_host_watcher(subject, host)
     @watchers.push subject
   end
 

@@ -7,7 +7,7 @@ class PingWatcher
   def initialize(host, observer, pingproc = Ping.method(:pingecho))
     @host = host
     @observer = observer
-    @observer.register(self, host)
+    @observer.register_host_watcher(self, host)
     @pingproc = pingproc
   end
 
