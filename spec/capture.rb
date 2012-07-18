@@ -1,5 +1,6 @@
-require 'stringio'
+# Copied from the discussion on http://rails-bestpractices.com/questions/1-test-stdin-stdout-in-rspec
 
+require 'stringio'
 
 def capture(*streams)
   streams.map! { |stream| stream.to_s }
