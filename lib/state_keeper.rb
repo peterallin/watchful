@@ -16,7 +16,19 @@
 #  along with Watchful.  If not, see <http://www.gnu.org/licenses/>.
 
 class StateKeeper
+  class WatcherUpdate
+    def initialize(watcher, new_state)
+      @watcher = watcher
+      @new_state = new_state
+    end
+
+    def execute(state_keeper)
+      state_keeper.set_state(@watcher, @new_state)
+    end
+  end
+  
   def initialize
+    @queue = Queue.new
     @watchers = {}
     @states = {}
     @viewers = []
@@ -31,26 +43,24 @@ class StateKeeper
 
   def register_state_viewer(viewer)
     @viewers.push viewer
-  end
-  
+  end  
 
   def hosts_watched
     @watchers.keys
-  end
-
-  def up(watcher)
-    set_state(watcher, :up)
-  end
-
-  def down(watcher)
-    set_state(watcher, :down)
   end
 
   def states(host)
     @states[host]
   end
 
-  private
+  def finished?
+    false
+  end
+
+  def step
+    return if @queue.length == 0
+    @queue.pop.execute(self)
+  end
 
   def set_state(watcher, state)
     if @states[watcher.host][watcher] != state then
@@ -59,4 +69,12 @@ class StateKeeper
     end
   end
   
+  def up(watcher)
+    @queue.push WatcherUpdate.new(watcher, :up)
+  end
+
+  def down(watcher)
+    @queue.push WatcherUpdate.new(watcher, :down)
+  end
+
 end

@@ -45,7 +45,7 @@ describe PingWatcher do
     PingWatcher.new(nil, TestObserver.new).kind.should eq "ping"
   end
   
-  it "never finishes" do
+  it "is not finished" do
     PingWatcher.new(nil, TestObserver.new).finished?.should eq(false)
   end
 

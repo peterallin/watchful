@@ -92,13 +92,13 @@ describe StateKeeper do
     pw_host1 = PingWatcher.new(host1, state, host1_ping.make_method)
     pw_host2 = PingWatcher.new(host2, state, host2_ping.make_method)
     tw_host1 = TestWatcher.new(host1, state)
-
     
     host1_ping.set_up
     host2_ping.set_down
-    [ pw_host1, pw_host2 ].each { |w| w.step }
+    [ pw_host1, pw_host2 ].each { |w| w.step; state.step }
     tw_host1.down
-
+    state.step
+    
     host1_states = state.states(host1)
     host1_states.keys.length.should eq(2)
     host1_states.keys.should include(pw_host1)
@@ -106,6 +106,7 @@ describe StateKeeper do
     host1_states[tw_host1].should eq(:down)
 
     tw_host1.up
+    state.step
     host1_states = state.states(host1)
     host1_states.keys.length.should eq(2)
     host1_states.keys.should include(pw_host1)
@@ -135,15 +136,19 @@ describe StateKeeper do
     state.register_state_viewer state_viewer
     host = Object.new
     tw = TestWatcher.new(host, state)
-    tw.up
+    tw.up; state.step
     state_viewer.times_updated.should eq(1)
-    tw.up
+    tw.up; state.step
     state_viewer.times_updated.should eq(1)
-    tw.down
+    tw.down; state.step
     state_viewer.times_updated.should eq(2)
-    tw.down
+    tw.down; state.step
     state_viewer.times_updated.should eq(2)
-    tw.up
+    tw.up; state.step
     state_viewer.times_updated.should eq(3)
+  end
+
+  it "is not finished" do
+    StateKeeper.new.finished?.should eq(false)
   end
 end
