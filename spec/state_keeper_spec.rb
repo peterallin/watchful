@@ -99,6 +99,30 @@ describe StateKeeper do
     state.down(tw2); state.step
   end
 
+  it "handles all available events in each step" do
+    state = StateKeeper.new
+    state_viewer = double("StateViewer")
+    state_viewer.should_receive(:update).exactly(5).times
+    state.register_state_viewer state_viewer
+    host = double("Host")
+    tw1 = double("Watcher1")
+    tw1.stub(:host).and_return(host)
+    tw2 = double("Watcher2")
+    tw2.stub(:host).and_return(host)
+    state.register_host_watcher(tw1, host)
+    state.register_host_watcher(tw2, host)
+    
+    state.up(tw1)
+    state.up(tw1)
+    state.down(tw1)
+    state.down(tw1)
+    state.up(tw1)
+    state.up(tw2)
+    state.up(tw2)
+    state.down(tw2)
+    state.step
+  end
+  
   it "is not finished" do
     StateKeeper.new.finished?.should eq(false)
   end

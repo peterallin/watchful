@@ -59,8 +59,9 @@ class StateKeeper
   end
 
   def step
-    return if @queue.length == 0
-    @queue.pop.execute(self)
+    while @queue.length != 0 do
+      @queue.pop.execute(self)
+    end
   end
 
   def set_state(watcher, state)
