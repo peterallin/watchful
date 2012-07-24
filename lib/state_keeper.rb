@@ -15,6 +15,8 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Watchful.  If not, see <http://www.gnu.org/licenses/>.
 
+require 'set'
+
 class StateKeeper
   class WatcherUpdate
     def initialize(watcher, new_state)
@@ -29,14 +31,13 @@ class StateKeeper
   
   def initialize
     @queue = Queue.new
-    @watchers = {}
     @states = {}
     @viewers = []
+    @hosts = Set.new
   end
   
   def register_host_watcher(watcher, host)
-    @watchers[host] = [] if not @watchers[host]
-    @watchers[host] = watcher  ### FIXME: Should be "push" not "="
+    @hosts.add host
     @states[host] = {} if not @states[host] 
     @states[host][watcher] = :unknown
   end
@@ -46,7 +47,7 @@ class StateKeeper
   end  
 
   def hosts_watched
-    @watchers.keys
+    @hosts
   end
 
   def states(host)
