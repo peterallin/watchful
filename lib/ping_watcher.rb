@@ -37,7 +37,7 @@ class PingWatcher
   end
   
   def step
-    up = @pingproc.call @host
+    up = @pingproc.call @host.name
     if up
       @observer.up self
     else

@@ -41,7 +41,8 @@ describe PingWatcher do
   it "tells the observer when the subject is 'up'" do
     observer = double("Observer")
     observer.stub(:register_host_watcher)
-    pw = PingWatcher.new(nil, observer, Proc.new { |h| true })
+    host = Host.new("testhost")
+    pw = PingWatcher.new(host, observer, Proc.new { |h| true })
     observer.should_receive(:up).with(pw)
     pw.step
   end
@@ -49,18 +50,19 @@ describe PingWatcher do
   it "tells the observer when the subject is 'down'" do
     observer = double("Observer")
     observer.stub(:register_host_watcher)
-    pw = PingWatcher.new(nil, observer, Proc.new { |h| false })
+    host = Host.new("testhost")
+    pw = PingWatcher.new(host, observer, Proc.new { |h| false })
     observer.should_receive(:down).with(pw)
     pw.step
   end
 
   it "pings the given host" do
-    host = double("Host")
+    host = Host.new("testhost")
     observer = double("Observer")
     observer.stub(:register_host_watcher)
     observer.stub(:down)
     ping = double("Ping")
-    ping.should_receive(:pingecho).with(host)
+    ping.should_receive(:pingecho).with(host.name)
     pw = PingWatcher.new(host, observer, ping.method(:pingecho))
     pw.step
   end
@@ -71,8 +73,8 @@ describe PingWatcher do
     observer = double("Observer")
     observer.stub(:register_host_watcher)
     observer.stub(:down)
-    
-    pw = PingWatcher.new(nil, observer, ping.method(:pingecho))
+    host = Host.new("testhost")
+    pw = PingWatcher.new(host, observer, ping.method(:pingecho))
 
     (1..10).each { pw.step }
   end
