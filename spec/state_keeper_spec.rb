@@ -76,21 +76,27 @@ describe StateKeeper do
     host2_states[pw_host2].should eq(:down)
   end
 
-  it "tells viewers when the state changes" do
+  it "tells viewers when the state of a watcher changes" do
     state = StateKeeper.new
     state_viewer = double("StateViewer")
-    state_viewer.should_receive(:update).exactly(3).times
+    state_viewer.should_receive(:update).exactly(5).times
     state.register_state_viewer state_viewer
     host = double("Host")
-    tw = double("Watcher")
-    tw.stub(:host).and_return(host)
-    state.register_host_watcher(tw, host)
+    tw1 = double("Watcher1")
+    tw1.stub(:host).and_return(host)
+    tw2 = double("Watcher2")
+    tw2.stub(:host).and_return(host)
+    state.register_host_watcher(tw1, host)
+    state.register_host_watcher(tw2, host)
     
-    state.up(tw); state.step
-    state.up(tw); state.step
-    state.down(tw); state.step
-    state.down(tw); state.step
-    state.up(tw); state.step
+    state.up(tw1); state.step
+    state.up(tw1); state.step
+    state.down(tw1); state.step
+    state.down(tw1); state.step
+    state.up(tw1); state.step
+    state.up(tw2); state.step
+    state.up(tw2); state.step
+    state.down(tw2); state.step
   end
 
   it "is not finished" do
