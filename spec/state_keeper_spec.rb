@@ -19,50 +19,6 @@ require 'state_keeper'
 require 'ping_watcher'
 require 'host'
 
-class TestWatcher
-  attr_reader :host
-  
-  def initialize(host, observer)
-    @host = host
-    @observer = observer
-    @observer.register_host_watcher(self, host)
-  end
-  
-  def up
-    @observer.up(self)
-  end
-  
-  def down
-    @observer.down(self)
-  end
-  
-  def kind
-    "test"
-  end
-end
-
-class TestPinger
-  def initialize
-    @state = false
-  end
-  
-  def ping(host)
-    @state
-  end
-  
-  def set_up
-    @state = true
-  end
-  
-  def set_down
-    @state = false
-  end
-
-  def make_method
-    self.method(:ping)
-  end
-end
-
 describe StateKeeper do
   it "maintains a list of hosts being watched" do
     state = StateKeeper.new
@@ -86,17 +42,18 @@ describe StateKeeper do
 
     host1 = Host.new("foo")
     host2 = Host.new("bar")
-    host1_ping = TestPinger.new
-    host2_ping = TestPinger.new
+    host1_ping = double("Host1Ping")
+    host1_ping.should_receive(:pingecho).and_return(true)
+    host2_ping = double("Host2Ping")
+    host2_ping.should_receive(:pingecho).and_return(false)
 
-    pw_host1 = PingWatcher.new(host1, state, host1_ping.make_method)
-    pw_host2 = PingWatcher.new(host2, state, host2_ping.make_method)
-    tw_host1 = TestWatcher.new(host1, state)
+    pw_host1 = PingWatcher.new(host1, state, host1_ping.method(:pingecho))
+    pw_host2 = PingWatcher.new(host2, state, host2_ping.method(:pingecho))
+    tw_host1 = double("watcher")
+    tw_host1.stub(:host).and_return(host1)
     
-    host1_ping.set_up
-    host2_ping.set_down
     [ pw_host1, pw_host2 ].each { |w| w.step; state.step }
-    tw_host1.down
+    state.down(tw_host1)
     state.step
     
     host1_states = state.states(host1)
@@ -105,7 +62,7 @@ describe StateKeeper do
     host1_states[pw_host1].should eq(:up)
     host1_states[tw_host1].should eq(:down)
 
-    tw_host1.up
+    state.up(tw_host1)
     state.step
     host1_states = state.states(host1)
     host1_states.keys.length.should eq(2)
@@ -120,32 +77,20 @@ describe StateKeeper do
   end
 
   it "tells viewers when the state changes" do
-    class TestStateViewer
-      attr_reader :times_updated
-      def initialize
-        @times_updated = 0
-      end
-      
-      def update
-        @times_updated = @times_updated + 1
-      end
-    end
-
     state = StateKeeper.new
-    state_viewer = TestStateViewer.new
+    state_viewer = double("StateViewer")
+    state_viewer.should_receive(:update).exactly(3).times
     state.register_state_viewer state_viewer
-    host = Object.new
-    tw = TestWatcher.new(host, state)
-    tw.up; state.step
-    state_viewer.times_updated.should eq(1)
-    tw.up; state.step
-    state_viewer.times_updated.should eq(1)
-    tw.down; state.step
-    state_viewer.times_updated.should eq(2)
-    tw.down; state.step
-    state_viewer.times_updated.should eq(2)
-    tw.up; state.step
-    state_viewer.times_updated.should eq(3)
+    host = double("Host")
+    tw = double("Watcher")
+    tw.stub(:host).and_return(host)
+    state.register_host_watcher(tw, host)
+    
+    state.up(tw); state.step
+    state.up(tw); state.step
+    state.down(tw); state.step
+    state.down(tw); state.step
+    state.up(tw); state.step
   end
 
   it "is not finished" do

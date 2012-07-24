@@ -17,97 +17,63 @@
 
 require 'ping_watcher'
 
-class TestObserver
-  attr_reader :watchers, :ups, :downs
-
-  def initialize
-    @watchers = []
-    @ups = []
-    @downs = []
-  end
-
-  def register_host_watcher(subject, host)
-    @watchers.push subject
-  end
-
-  def up(watcher)
-    @ups.push watcher
-  end
-
-  def down(watcher)
-    @downs.push watcher
-  end
-end
-
 describe PingWatcher do
 
-  it "is on the 'ping' kind" do
-    PingWatcher.new(nil, TestObserver.new).kind.should eq "ping"
+  it "is of the 'ping' kind" do
+    test_observer = double("Observer")
+    test_observer.stub(:register_host_watcher)
+    PingWatcher.new(nil, test_observer).kind.should eq "ping"
   end
   
   it "is not finished" do
-    PingWatcher.new(nil, TestObserver.new).finished?.should eq(false)
+    test_observer = double("Observer")
+    test_observer.stub(:register_host_watcher)
+    PingWatcher.new(nil, test_observer).finished?.should eq(false)
   end
 
   it "registers with an observer" do
-    observer = TestObserver.new
-    observer.watchers.length.should eq(0)
-    pw = PingWatcher.new(nil, observer)
-    observer.watchers.length.should eq(1)
-    observer.watchers[0].should be(pw)
+    test_host = double("Host")
+    observer = double("Observer")
+    observer.should_receive(:register_host_watcher).with(kind_of(PingWatcher), test_host)
+    pw = PingWatcher.new(test_host, observer)
   end
 
   it "tells the observer when the subject is 'up'" do
-    observer = TestObserver.new
-    observer.ups.size.should eq(0)
-
+    observer = double("Observer")
+    observer.stub(:register_host_watcher)
     pw = PingWatcher.new(nil, observer, Proc.new { |h| true })
+    observer.should_receive(:up).with(pw)
     pw.step
-
-    observer.ups.size.should eq(1)
   end
 
   it "tells the observer when the subject is 'down'" do
-    observer = TestObserver.new
-    observer.downs.size.should eq(0)
-
+    observer = double("Observer")
+    observer.stub(:register_host_watcher)
     pw = PingWatcher.new(nil, observer, Proc.new { |h| false })
+    observer.should_receive(:down).with(pw)
     pw.step
-
-    observer.downs.size.should eq(1)
   end
 
   it "pings the given host" do
-    class TestPing
-      attr_reader :last_host
-      def pingecho(host)
-        @last_host = host
-      end
-    end
-    
-    host = Object.new
-    observer = TestObserver.new
-    ping = TestPing.new
+    host = double("Host")
+    observer = double("Observer")
+    observer.stub(:register_host_watcher)
+    observer.stub(:down)
+    ping = double("Ping")
+    ping.should_receive(:pingecho).with(host)
     pw = PingWatcher.new(host, observer, ping.method(:pingecho))
     pw.step
-    ping.last_host.should be(host)
   end
 
   it "pings once per step" do
-    class TestPing
-      attr_reader :count
-      def initialize
-        @count = 0
-      end
-      def pingecho(host)
-        @count = @count + 1
-      end
-    end
-    ping = TestPing.new
-    observer = TestObserver.new
+    ping = double("Ping")
+    ping.should_receive(:pingecho).exactly(10).times
+    observer = double("Observer")
+    observer.stub(:register_host_watcher)
+    observer.stub(:down)
+    
     pw = PingWatcher.new(nil, observer, ping.method(:pingecho))
 
     (1..10).each { pw.step }
-    ping.count.should eq(10)
   end
 end

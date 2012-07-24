@@ -38,7 +38,7 @@ class StateKeeper
     @watchers[host] = [] if not @watchers[host]
     @watchers[host] = watcher  ### FIXME: Should be "push" not "="
     @states[host] = {} if not @states[host] 
-    @states[host][watcher] = nil
+    @states[host][watcher] = :unknown
   end
 
   def register_state_viewer(viewer)
