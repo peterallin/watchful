@@ -122,6 +122,22 @@ describe StateKeeper do
     state.down(tw2)
     state.step
   end
+
+  it "can tell if any watchers have unknown state" do
+    state = StateKeeper.new
+    host = Host.new("testhost")
+    watcher1 = double("Watcher1")
+    watcher1.stub(:host).and_return(host)
+    watcher2 = double("Watcher2")
+    watcher2.stub(:host).and_return(host)
+    state.register_host_watcher(watcher1, host)
+    state.register_host_watcher(watcher2, host)
+    state.any_unknown?.should eq(true)
+    state.set_state(watcher1, :up)
+    state.any_unknown?.should eq(true)
+    state.set_state(watcher2, :up)
+    state.any_unknown?.should eq(false)    
+  end
   
   it "is not finished" do
     StateKeeper.new.finished?.should eq(false)

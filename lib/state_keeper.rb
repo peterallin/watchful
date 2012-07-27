@@ -54,6 +54,10 @@ class StateKeeper
     @states[host]
   end
 
+  def any_unknown?
+    @states.keys.map { |k| @states[k].values }.flatten.any? { |s| s == :unknown }
+  end
+  
   def finished?
     false
   end

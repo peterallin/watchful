@@ -1,0 +1,53 @@
+#!/usr/bin/env ruby
+
+# Copyright (C) 2012 Peter Allin <peter@peca.dk>
+#
+# This file is part of Watchful.
+#
+#  Watchful is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  Watchful is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with Watchful.  If not, see <http://www.gnu.org/licenses/>.
+
+require 'state_keeper'
+require 'ping_watcher'
+require 'host'
+require 'driver'
+require 'state_viewer_multi_ping'
+require 'optparse'
+
+Thread.abort_on_exception = true
+class QuitException < Exception
+end
+trap("SIGINT") { raise QuitException.new }
+
+options = {}
+optparse = OptionParser.new do |opts|
+  opts.banner = "Usage: #$0 host1 host2 ..."
+  opts.on( '-h', '--help', 'Display this screen' ) do
+    puts opts
+    exit
+  end
+end
+optparse.parse!
+
+host_names = ARGV
+hosts = host_names.map { |name| Host.new name }
+state = StateKeeper.new
+ping_watchers = hosts.map { |host| PingWatcher.new(host, state) }
+drivers = ping_watchers.map { |watcher| Driver.new(watcher, 1) } + [ Driver.new(state,0) ]
+state_viewer = StateViewerMultiPing.new(state)
+
+begin
+  drivers.each { |d| d.start }
+  drivers.each { |d| d.join }
+rescue QuitException
+end

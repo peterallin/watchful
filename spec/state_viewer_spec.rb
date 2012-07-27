@@ -25,7 +25,9 @@ describe StateViewerText do
   it "registers with a state" do
     state = double("StateKeeper")
     state.should_receive(:register_state_viewer).with(kind_of(StateViewerText))
-    state_viewer = StateViewerText.new(state)
+    term_info = double("TermInfo")
+    term_info.stub(:control)
+    state_viewer = StateViewerText.new(state, term_info)
   end
 
   it "prints status for each watched host" do
@@ -36,12 +38,15 @@ describe StateViewerText do
     w3 = double("Watcher3", :kind => "Watcher3")
     w4 = double("Watcher4", :kind => "Watcher4")
     state = double("StateKeeper")
+    state.stub(:any_unknown?)
     state.should_receive(:register_state_viewer)
     state.should_receive(:hosts_watched).and_return [host1, host2]
     state.should_receive(:states).with(host1).and_return(w1 => :up, w2 => :up, w3 => :down)
     state.should_receive(:states).with(host2).and_return(w1 => :up, w4 => :down)
-
-    state_viewer = StateViewerText.new(state)
+    term_info = double("TermInfo")
+    term_info.stub(:control)
+    
+    state_viewer = StateViewerText.new(state, term_info)
     state_text = capture(:stdout) { state_viewer.update }
     expected_state_text = <<eos
 Host1:
@@ -54,6 +59,18 @@ Host2:
   Watcher4: Down
 eos
     state_text.should eq expected_state_text
+  end
+
+  it "won't print status before all watchers have a known state" do
+    state = double("StateKeeper")
+    state.stub(:register_state_viewer)
+    state.stub(:any_unknown?).and_return(true, false)
+    state.stub(:hosts_watched).and_return([])
+    term_info = double("TermInfo")
+    term_info.stub(:control)
+    state_viewer = StateViewerText.new(state, term_info)
+    capture(:stdout) { state_viewer.update }.should eq("")
+    capture(:stdout) { state_viewer.update }.should eq("\n")
   end
   
 end

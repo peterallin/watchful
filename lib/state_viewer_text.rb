@@ -15,21 +15,26 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Watchful.  If not, see <http://www.gnu.org/licenses/>.
 
+require 'terminfo'
+
 class StateViewerText
-  def initialize(state)
+  def initialize(state, term_info = TermInfo)
+    @term_info = term_info
     @state = state
     @state.register_state_viewer(self)
   end
 
   def update
+    return if @state.any_unknown?
     print_state
   end
 
   private
   
   def print_state
+    @term_info.control("clear")
     host_text_states = []
-    @state.hosts_watched.sort { |a,b| a.name <=> b.name }.each do |host|      
+    @state.hosts_watched.sort { |a,b| a.name <=> b.name }.each do |host|
       host_text_state = "#{host.name}:\n"
       states = @state.states(host)
       states.keys.sort { |a,b| a.kind <=> b.kind }.each do |watcher|
